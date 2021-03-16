@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(ros_perception_fusion)
+project(procesador_rgb)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,10 +11,15 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  geometry_msgs
   message_generation
   body_tracker_msgs
+  #ros_openpose
 )
+
+#######################
+# find_package(Eigen REQUIRED)
+# include_directories(${Eigen_INCLUDE_DIRS})
+#######################
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -123,7 +128,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
+# Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/procesador_rgb.cpp
 # )
@@ -136,7 +141,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
- add_executable(${PROJECT_NAME}_node src/ros_perception_fusion_node.cpp)
+ add_executable(${PROJECT_NAME}_node src/procesador_rgb_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

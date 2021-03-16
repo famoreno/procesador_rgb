@@ -1,0 +1,3 @@
+<launch>
+      <include file="$(find ros_openpose)/launch/run_local.launch" />
+</launch>
