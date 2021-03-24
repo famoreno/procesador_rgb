@@ -24,7 +24,9 @@ struct TSkeleton
   int status;
 
   // transformacion 3D entre este esqueleto y el de referencia (se rellena al inicio)
-  Matrix4f transformacion;
+  // Matrix4f transformacion;
+  Matrix3f rotacion;
+  Vector3f traslacion;
 };
 
 struct TSkeleton_fe
