@@ -11,7 +11,9 @@
 #include "procesador_rgb/TSkeleton_structs.h"
 
 // other
-#include <Eigen/Dense>  // Matrices, arrays, transformadas, etc
+#include <Eigen/Dense>        // matrices, arrays, transformadas, etc
+#include <Eigen/Eigenvalues>  // for eigenvectors and eigenvalues
+#include <Eigen/Geometry>     // for quaternions
 
 using namespace std;
 using namespace Eigen;
@@ -69,9 +71,7 @@ class CSkeletonProcessor
     esq_rgb_ref[i].posicion_hombro_derecho = esq_rgb[i].rotacion * esq_rgb[i].posicion_hombro_derecho + esq_rgb[i].traslacion;
     esq_rgb_ref[i].posicion_codo_derecho = esq_rgb[i].rotacion * esq_rgb[i].posicion_codo_derecho + esq_rgb[i].traslacion;
     esq_rgb_ref[i].posicion_mano_derecha = esq_rgb[i].rotacion * esq_rgb[i].posicion_mano_derecha + esq_rgb[i].traslacion;
-
   }
-
 
 
   void fuseSkeletons()
@@ -95,6 +95,7 @@ class CSkeletonProcessor
       esq_fused.posicion_mano_derecha =  esq_fused.posicion_mano_derecha + esq_rgb_ref[i].posicion_mano_derecha; //*(esq_rgb_ref[i].status*0.5);
       cont++;
     }
+
     esq_fused.posicion_cabeza = esq_fused.posicion_cabeza/cont;
     esq_fused.posicion_cuello = esq_fused.posicion_cuello/cont;
     esq_fused.posicion_hombro = esq_fused.posicion_hombro/cont;
@@ -110,18 +111,174 @@ class CSkeletonProcessor
 
   }
 
-  void extrinsicCalibrateRGBD()
+  //------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  void copiar_esqueleto(std::vector<Vector3f> destino, int idx)
   {
-    // TO-DO: Applies Horn method to compute the best alignment between RGBD cameras
+    for(unsigned char i = 0; i < 3; i++) destino[0][i]  = esq_rgb[idx].posicion_cabeza[i];
+    for(unsigned char i = 0; i < 3; i++) destino[1][i]  = esq_rgb[idx].posicion_cuello[i];
+    for(unsigned char i = 0; i < 3; i++) destino[2][i]  = esq_rgb[idx].posicion_hombro[i];
+    for(unsigned char i = 0; i < 3; i++) destino[3][i]  = esq_rgb[idx].posicion_columna_arriba[i];
+    for(unsigned char i = 0; i < 3; i++) destino[4][i]  = esq_rgb[idx].posicion_columna_medio[i];
+    for(unsigned char i = 0; i < 3; i++) destino[5][i]  = esq_rgb[idx].posicion_columna_abajo[i];
+    for(unsigned char i = 0; i < 3; i++) destino[6][i]  = esq_rgb[idx].posicion_hombro_izquierdo[i];
+    for(unsigned char i = 0; i < 3; i++) destino[7][i]  = esq_rgb[idx].posicion_codo_izquierdo[i];
+    for(unsigned char i = 0; i < 3; i++) destino[8][i]  = esq_rgb[idx].posicion_mano_izquierda[i];
+    for(unsigned char i = 0; i < 3; i++) destino[9][i]  = esq_rgb[idx].posicion_hombro_derecho[i];
+    for(unsigned char i = 0; i < 3; i++) destino[10][i] = esq_rgb[idx].posicion_codo_derecho[i];
+    for(unsigned char i = 0; i < 3; i++) destino[11][i] = esq_rgb[idx].posicion_mano_derecha[i];
   }
 
+  void calcular_centroide(Vector3f & ct_destino, int idx)
+  {
+    for( unsigned char i = 0; i < 3; i++ ) 
+    {
+      ct_destino[i] = (1/12)*(esq_rgb[idx].posicion_cabeza[i] + esq_rgb[idx].posicion_cuello[i] + esq_rgb[idx].posicion_hombro[i] + 
+                              esq_rgb[idx].posicion_columna_arriba[i] + esq_rgb[idx].posicion_columna_medio[i] + esq_rgb[idx].posicion_columna_abajo[i] +
+                              esq_rgb[idx].posicion_hombro_izquierdo[i] + esq_rgb[idx].posicion_codo_izquierdo[i] + esq_rgb[idx].posicion_mano_izquierda[i] + 
+                              esq_rgb[idx].posicion_hombro_derecho[i] + esq_rgb[idx].posicion_codo_derecho[i] +esq_rgb[idx].posicion_mano_derecha[i]);
+    }
+  }
+  //----------------------------
+
+  void extrinsicCalibrateRGBD(const int idx)
+  {
+    // copiar esqueletos a un vector: 'point_this' y 'point_other'
+    vector<Vector3f> points_this(12), points_other(12);
+
+    copiar_esqueleto(points_this, 0);
+    copiar_esqueleto(points_other, 1);
+
+    // paso 1: calcular centroides
+    Vector3f ct_this, ct_others;
+    calcular_centroide(ct_this, 0);
+    calcular_centroide(ct_others, 1);
+
+    // paso 2: restar el centroide a los puntos y calcular los componentes de S
+	  Matrix3f S;	// Zeroed by default
+    for (size_t i = 0; i < points_other.size(); i++)
+    {
+      points_this[i] -= ct_this;
+      points_other[i] -= ct_others;
+
+      S(0, 0) += points_other[i][0] * points_this[i][0];
+      S(0, 1) += points_other[i][0] * points_this[i][1];
+      S(0, 2) += points_other[i][0] * points_this[i][2];
+
+      S(1, 0) += points_other[i][1] * points_this[i][0];
+      S(1, 1) += points_other[i][1] * points_this[i][1];
+      S(1, 2) += points_other[i][1] * points_this[i][2];
+
+      S(2, 0) += points_other[i][2] * points_this[i][0];
+      S(2, 1) += points_other[i][2] * points_this[i][1];
+      S(2, 2) += points_other[i][2] * points_this[i][2];
+    }
+
+    // paso 3: construye la matriz N
+    Matrix4f N;	// Zeroed by default
+    N(0, 0) = S(0, 0) + S(1, 1) + S(2, 2);
+    N(0, 1) = S(1, 2) - S(2, 1);
+    N(0, 2) = S(2, 0) - S(0, 2);
+    N(0, 3) = S(0, 1) - S(1, 0);
+
+    N(1, 0) = N(0, 1);
+    N(1, 1) = S(0, 0) - S(1, 1) - S(2, 2);
+    N(1, 2) = S(0, 1) + S(1, 0);
+    N(1, 3) = S(2, 0) + S(0, 2);
+
+    N(2, 0) = N(0, 2);
+    N(2, 1) = N(1, 2);
+    N(2, 2) = -S(0, 0) + S(1, 1) - S(2, 2);
+    N(2, 3) = S(1, 2) + S(2, 1);
+
+    N(3, 0) = N(0, 3);
+    N(3, 1) = N(1, 3);
+    N(3, 2) = N(2, 3);
+    N(3, 3) = -S(0, 0) - S(1, 1) + S(2, 2);
+
+	// paso 4: calcular los autovectores de la matriz N (q es el quaternion de rotacion y es igual al autovector correspondiente al mayor autovalor)
+	// matrix (last column in Z)
+  Matrix4f Z;
+
+  // la matriz N es simetrica --> selfadjointeigensolver
+  SelfAdjointEigenSolver<Matrix4f> es(N);
+  Vector4f v = es.eigenvectors().col(3); // get the largest 'eigenvector', it should normalized to one
+  
+	// ASSERTDEB_(
+	// 	fabs(
+	// 		sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]) - 1.0) <
+	// 	0.1);
+
+	// Make q_r > 0
+	if (v[0] < 0)
+	{
+		v[0] *= -1;
+		v[1] *= -1;
+		v[2] *= -1;
+		v[3] *= -1;
+	}
+
+  // paso 5: rotar el centroide de "others" con la rotacion en forma de matriz y restarlo del "ct_this"
+  Quaternionf q(v);
+  Matrix3f rotM = q.toRotationMatrix();
+  Vector3f n_ct_others = rotM*ct_others;
+  Vector3f t = ct_this - n_ct_others;
+
+  // save output
+  esq_rgb[idx].rotacion = rotM;
+  esq_rgb[idx].traslacion = t;
+
+	// // out_transform: Create a pose rotation with the quaternion
+	// for (unsigned int i = 0; i < 4; i++)  // insert the quaternion part
+	// 	out_transform[i + 3] = v[i];
+
+	// // Compute scale
+	// double s;
+	// if (forceScaleToUnity)
+	// {
+	// 	s = 1.0;  // Enforce scale to be 1
+	// }
+	// else
+	// {
+	// 	double num = 0.0;
+	// 	double den = 0.0;
+	// 	for (size_t i = 0; i < nMatches; i++)
+	// 	{
+	// 		num += square(points_other[i].x) + square(points_other[i].y) +
+	// 			square(points_other[i].z);
+	// 		den += square(points_this[i].x) + square(points_this[i].y) +
+	// 			square(points_this[i].z);
+	// 	}  // end-for
+
+	// 	// The scale:
+	// 	s = std::sqrt(num / den);
+	// }
+
+	// TPoint3D pp;
+	// out_transform.composePoint(
+	// 	ct_others.x, ct_others.y, ct_others.z, pp.x, pp.y, pp.z);
+	// pp *= s;
+
+	// out_transform[0] = ct_this.x - pp.x;  // X
+	// out_transform[1] = ct_this.y - pp.y;  // Y
+	// out_transform[2] = ct_this.z - pp.z;  // Z
+
+	// out_scale = s;	// return scale
+	// return true;
+
+	// MRPT_END
+
+ }  // extrinsicCalibration
+
+
+  //------------------------------------------------------------------------------------------------------------------------------------------------------
   public: 
   // constructor
   CSkeletonProcessor(ros::NodeHandle *nh) {
     // initalize subscriptions
-    sub_skeleton0 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,0)); //Se suscribe al topic body_tracker/skeleton
-    sub_skeleton1 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,1)); //Se suscribe al topic body_tracker/skeleton
-    sub_skeleton2 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,2)); //Se suscribe al topic body_tracker/skeleton
+    sub_skeleton0 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker_sensor0/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,0)); //Se suscribe al topic body_tracker/skeleton
+    sub_skeleton1 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker_sensor1/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,1)); //Se suscribe al topic body_tracker/skeleton
+    sub_skeleton2 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker_sensor2/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,2)); //Se suscribe al topic body_tracker/skeleton
     sub_skeleton3 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,3)); //Se suscribe al topic body_tracker/skeleton
     sub_openpose = nh->subscribe("frame", 1000, &CSkeletonProcessor::chatterCallback_fe, this); //Se suscribe al topic frame (esqueleto de la cámara ojo de pez)
   }
