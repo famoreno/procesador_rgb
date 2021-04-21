@@ -14,6 +14,10 @@
 #include <Eigen/Dense>        // matrices, arrays, transformadas, etc
 #include <Eigen/Eigenvalues>  // for eigenvectors and eigenvalues
 #include <Eigen/Geometry>     // for quaternions
+#include <stdio.h>
+// #include "conio.h"
+FILE *doc;
+
 
 using namespace std;
 using namespace Eigen;
@@ -74,7 +78,7 @@ class CSkeletonProcessor
   }
 
 
-  void fuseSkeletons()
+  void fuseSkeletons(const body_tracker_msgs::Skeleton::ConstPtr&  data)
   {
     camaras_ref();
     int cont = 0;
@@ -109,9 +113,10 @@ class CSkeletonProcessor
     esq_fused.posicion_codo_derecho = esq_fused.posicion_codo_derecho/cont;
     esq_fused.posicion_mano_derecha = esq_fused.posicion_mano_derecha/cont;
 
+
+
   }
 
-  //------------------------------------------------------------------------------------------------------------------------------------------------------
 
   void copiar_esqueleto(std::vector<Vector3f> destino, int idx)
   {
@@ -139,7 +144,7 @@ class CSkeletonProcessor
                               esq_rgb[idx].posicion_hombro_derecho[i] + esq_rgb[idx].posicion_codo_derecho[i] +esq_rgb[idx].posicion_mano_derecha[i]);
     }
   }
-  //----------------------------
+  
 
   void extrinsicCalibrateRGBD(const int idx)
   {
@@ -271,7 +276,6 @@ class CSkeletonProcessor
  }  // extrinsicCalibration
 
 
-  //------------------------------------------------------------------------------------------------------------------------------------------------------
   public: 
   // constructor
   CSkeletonProcessor(ros::NodeHandle *nh) {
@@ -285,13 +289,14 @@ class CSkeletonProcessor
 
   // callbacks
   // this callback accepts the index of the camera to process
-  void chatterCallback_rgb(const body_tracker_msgs::Skeleton::ConstPtr&  data, const int idx)
+  void chatterCallback_rgb(const body_tracker_msgs::Skeleton::ConstPtr&  data, const int idx, double timestamp)
   {
     // DEBUG
     // ROS_INFO("join_position_head_x is: %f", data->joint_position_head.x);
     // ROS_INFO("join_position_head_y is: %f", data->joint_position_head.y);
     // ROS_INFO("join_position_head_z is: %f", data->joint_position_head.z);
-
+    if (skeleton_ready[0] == false)
+    {
     // copiar toda la información al esqueleto local
     copyJointData(data->joint_position_head, esq_rgb[idx].posicion_cabeza);
     copyJointData(data->joint_position_neck, esq_rgb[idx].posicion_cuello);
@@ -306,17 +311,20 @@ class CSkeletonProcessor
     copyJointData(data->joint_position_right_elbow, esq_rgb[idx].posicion_codo_derecho);
     copyJointData(data->joint_position_right_hand, esq_rgb[idx].posicion_mano_derecha);
 
-    esq_rgb[idx].status = data->tracking_status;
+    // Guardar el tiempo en el que se guardan los datos
+    esq_rgb[idx].timestamp = ros::Time::now().toSec();
 
+    esq_rgb[idx].status = data->tracking_status;
+    }
     // activar el flag de que el esqueleto esta listo para ser procesado
-    // skeleton_ready[0] = true;
+    skeleton_ready[0] = true;
   }
 
   void chatterCallback_fe(const ros_openpose::Frame::ConstPtr&  data_fe)
   {
-    // DEBUG
-    ROS_INFO("position nose x is: %f", data_fe->persons[0].bodyParts[0].pixel.x);
-    ROS_INFO("position nose y is: %f", data_fe->persons[0].bodyParts[0].pixel.y);
+    // // DEBUG
+    // ROS_INFO("position nose x is: %f", data_fe->persons[0].bodyParts[0].pixel.x);
+    // ROS_INFO("position nose y is: %f", data_fe->persons[0].bodyParts[0].pixel.y);
 
     // copiar toda la información al esqueleto local
     copiar_coordenadas(data_fe->persons[0].bodyParts[0], esq_fe.posicion_cabeza);
@@ -354,6 +362,12 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   CSkeletonProcessor sp = CSkeletonProcessor(&nh);
   ros::spin();
+  doc = fopen("resultados.txt, "a+");
+  printf("join_position_head_x is: %f",esq_rgb[0])
+  printf("join_position_head_x is: %f",esq_rgb[1])
+  printf("join_position_head_fused_x is: %f",esq_fused)
+
+
 
   return 0;
 }
