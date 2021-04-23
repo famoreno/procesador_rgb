@@ -22,11 +22,17 @@ struct TSkeleton
 
   // estado de la estimacion segun el nodo de la camara
   int status;
+  double timestamp;
 
   // transformacion 3D entre este esqueleto y el de referencia (se rellena al inicio)
   // Matrix4f transformacion;
-  Matrix3f rotacion;
-  Vector3f traslacion;
+  Matrix3f rotacion = MatrixXf::Identity(3, 3); // eye
+  Vector3f traslacion = MatrixXf::Zero(1,3); // zero vector
+
+//  TSkeleton() {
+//	rotacion = MatrixXf::Identity(3, 3); // eye
+//	traslacion = MatrixXf::Zero(1,3); // zero vector
+//  }
 };
 
 struct TSkeleton_fe
