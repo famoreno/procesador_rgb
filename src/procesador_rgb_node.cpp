@@ -58,7 +58,7 @@ class CSkeletonProcessor
   
   void camaras_ref()
   {
-    for (int i = 0; i<=3; i++) {
+    for (int i = 0; i < 4; i++) {
       if( !skeleton_ready[i] )
       continue;
 
@@ -81,7 +81,6 @@ class CSkeletonProcessor
     esq_rgb_ref[i].posicion_codo_derecho = esq_rgb[i].rotacion * esq_rgb[i].posicion_codo_derecho + esq_rgb[i].traslacion;
     esq_rgb_ref[i].posicion_mano_derecha = esq_rgb[i].rotacion * esq_rgb[i].posicion_mano_derecha + esq_rgb[i].traslacion;
   }
-
 
   void copiar_esqueleto(std::vector<Vector3f> destino, int idx)
   {
@@ -209,7 +208,7 @@ class CSkeletonProcessor
     sub_skeleton3 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,3)); //Se suscribe al topic body_tracker/skeleton
     sub_openpose = nh->subscribe("frame", 1000, &CSkeletonProcessor::chatterCallback_fe, this); //Se suscribe al topic frame (esqueleto de la cámara ojo de pez)
 
-    doc = fopen("/home/mapir-admin/Desktop/resultados.txt", "w+");
+    doc = fopen("/home/mapir-admin/Desktop/resultados.txt", "wt");
      
      esq_rgb[1].traslacion[0] = 0.5;
      esq_rgb[1].traslacion[1] = 0.0;
@@ -228,7 +227,7 @@ class CSkeletonProcessor
 
     int cont = 0;
 
-    for(int i=0; i<= 4; i++)
+    for(int i=0; i<4; i++)
     {
 
       // set of filters      
@@ -239,13 +238,17 @@ class CSkeletonProcessor
       }
 
       const double lapse = esq_rgb[i].timestamp - esq_rgb[0].timestamp;
+      // ROS_INFO("Tiempo 1: %.3f \n Tiempo 2: %.3f", esq_rgb[0].timestamp, esq_rgb[i].timestamp);
+      // ROS_INFO("Lapso: %f", lapse);
       if( esq_rgb_ref[i].status == 0 || fabs(lapse) > MAX_LAPSE )
       {
         fprintf(doc,"0.000,0.000,0.000,");
         continue;
+        
       }
-
+      
       // valid skeleton
+      ROS_INFO("Esqueleto valido");
       esq_fused.posicion_cabeza =  esq_fused.posicion_cabeza + esq_rgb_ref[i].posicion_cabeza; //*(esq_rgb_ref[i].status*0.5);
       esq_fused.posicion_cuello =  esq_fused.posicion_cuello + esq_rgb_ref[i].posicion_cuello; //*(esq_rgb_ref[i].status*0.5);
       esq_fused.posicion_hombro =  esq_fused.posicion_hombro + esq_rgb_ref[i].posicion_hombro; //*(esq_rgb_ref[i].status*0.5);
@@ -259,7 +262,6 @@ class CSkeletonProcessor
       esq_fused.posicion_codo_derecho =  esq_fused.posicion_codo_derecho + esq_rgb_ref[i].posicion_codo_derecho; //*(esq_rgb_ref[i].status*0.5);
       esq_fused.posicion_mano_derecha =  esq_fused.posicion_mano_derecha + esq_rgb_ref[i].posicion_mano_derecha; //*(esq_rgb_ref[i].status*0.5);
       cont++;
-
       skeleton_ready[i] = false;
 
       fprintf(doc, "%.3f,%.3f,%.3f,",esq_rgb_ref[i].posicion_cabeza[0],esq_rgb_ref[i].posicion_cabeza[1],esq_rgb_ref[i].posicion_cabeza[2]);      
@@ -286,12 +288,14 @@ class CSkeletonProcessor
   // this callback accepts the index of the camera to process
   void chatterCallback_rgb(const body_tracker_msgs::Skeleton::ConstPtr&  data, const int idx)
   {
-    // DEBUG
-    // ROS_INFO("join_position_head_x is: %f", data->joint_position_head.x);
-    // ROS_INFO("join_position_head_y is: %f", data->joint_position_head.y);
-    // ROS_INFO("join_position_head_z is: %f", data->joint_position_head.z);
     if( skeleton_ready[idx] == false )
     {
+      // DEBUG
+      ROS_INFO("[%d,%s] : join_position_head: %.3f, %.3f, %.3f", idx, skeleton_ready[idx] ? "true" : "false", data->joint_position_head.x, data->joint_position_head.y, data->joint_position_head.z);
+      // ROS_INFO("join_position_head_x is: %f", data->joint_position_head.x);
+      // ROS_INFO("join_position_head_y is: %f", data->joint_position_head.y);
+      // ROS_INFO("join_position_head_z is: %f", data->joint_position_head.z);
+
       // copiar toda la información al esqueleto local
       copyJointData(data->joint_position_head, esq_rgb[idx].posicion_cabeza);
       copyJointData(data->joint_position_neck, esq_rgb[idx].posicion_cuello);
@@ -359,7 +363,7 @@ int main(int argc, char **argv)
 
   while(ros::ok()) {
     ros::spinOnce();
-    //sp.fuseSkeletons();
+    sp.fuseSkeletons();
   }
 
   return 0;

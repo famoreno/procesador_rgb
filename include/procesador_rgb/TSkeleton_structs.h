@@ -26,13 +26,15 @@ struct TSkeleton
 
   // transformacion 3D entre este esqueleto y el de referencia (se rellena al inicio)
   // Matrix4f transformacion;
-  Matrix3f rotacion = MatrixXf::Identity(3, 3); // eye
-  Vector3f traslacion = MatrixXf::Zero(1,3); // zero vector
+  // Matrix3f rotacion = MatrixXf::Identity(3, 3); // eye
+  // Vector3f traslacion = MatrixXf::Zero(1,3); // zero vector
+  Matrix3f rotacion; // eye
+  Vector3f traslacion; // zero vector
 
-//  TSkeleton() {
-//	rotacion = MatrixXf::Identity(3, 3); // eye
-//	traslacion = MatrixXf::Zero(1,3); // zero vector
-//  }
+  TSkeleton() {
+    rotacion = Matrix3f::Identity(); // eye
+    traslacion = Vector3f::Zero(); // zero vector
+  }
 };
 
 struct TSkeleton_fe
