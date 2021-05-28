@@ -104,18 +104,33 @@ class CSkeletonProcessor
     // ROS_INFO("\nesqueleto_destino %d: %.3f, %.3f, %.3f", idx, destino[0][0], destino[0][1], destino[0][2]);
   }
 
+  void copiar_esqueleto_top(std::vector<Vector3f> & destino, int idx)
+  {
+    // ROS_INFO("\nesqueleto %d: %.3f, %.3f, %.3f", idx, esq_rgb[idx].posicion_cabeza[0], esq_rgb[idx].posicion_cabeza[1], esq_rgb[idx].posicion_cabeza[2]);
+    for(unsigned char i = 0; i < 3; i++) destino[0][i]  = esq_rgb[idx].posicion_cabeza[i];
+    for(unsigned char i = 0; i < 3; i++) destino[1][i]  = esq_rgb[idx].posicion_cuello[i];
+    for(unsigned char i = 0; i < 3; i++) destino[2][i]  = esq_rgb[idx].posicion_columna_arriba[i];
+    for(unsigned char i = 0; i < 3; i++) destino[3][i]  = esq_rgb[idx].posicion_hombro_izquierdo[i];
+    for(unsigned char i = 0; i < 3; i++) destino[4][i]  = esq_rgb[idx].posicion_codo_izquierdo[i];
+    for(unsigned char i = 0; i < 3; i++) destino[5][i]  = esq_rgb[idx].posicion_hombro_derecho[i];
+    for(unsigned char i = 0; i < 3; i++) destino[6][i]  = esq_rgb[idx].posicion_codo_derecho[i];
+    // ROS_INFO("\nesqueleto_destino %d: %.3f, %.3f, %.3f", idx, destino[0][0], destino[0][1], destino[0][2]);
+  }
+
+
   void calcular_centroide(Vector3f & centroid, std::vector<Vector3f> & points)
   {
     centroid[0] = centroid[1] = centroid[2] = 0.0;
-    for( unsigned char i = 0; i < 12; i++ ) 
+    const size_t n_points = points.size();
+    for( unsigned char i = 0; i < n_points; i++ ) 
     {
       centroid[0] += points[i][0];
       centroid[1] += points[i][1];
       centroid[2] += points[i][2];
     }
-    centroid[0] /= 12;
-    centroid[1] /= 12;
-    centroid[2] /= 12;
+    centroid[0] /= n_points;
+    centroid[1] /= n_points;
+    centroid[2] /= n_points;
   }
 
   public: 
@@ -130,9 +145,11 @@ class CSkeletonProcessor
 
     myDoc.open("/home/mapir-admin/Desktop/resultados.txt", ios::out);
      
+    /*
     esq_rgb[1].traslacion[0] = 0.0;
-    esq_rgb[1].traslacion[1] = 0.5;
+    esq_rgb[1].traslacion[1] = 0.0;
     esq_rgb[1].traslacion[2] = 0.0;
+    */
   }
 
   ~CSkeletonProcessor() {
@@ -141,19 +158,19 @@ class CSkeletonProcessor
 
   void extrinsicCalibrateRGBD(const int idx)
   {
-
     // if( !skeleton_ready[0] || !skeleton_ready[idx] )
     //   ROS_INFO("Listo. 0: %s, %d: %s", skeleton_ready[0] ? "true" : "false", idx, skeleton_ready[idx] ? "true" : "false");
     //   return;
 
-
     // copiar esqueletos a un vector: 'point_this' y 'point_other'
-    vector<Vector3f> points_this(12), points_other(12);
+    // vector<Vector3f> points_this(12), points_other(12);
+    vector<Vector3f> points_this(7), points_other(7);
 
+  /*
     points_this[0] = Vector3f(2.0,0.5,0.5);
     points_this[1] = Vector3f(2.0,0.5,0.35);
     points_this[2] = Vector3f(2.0,0.5,0.2);
-    points_this[3] = Vector3f(2.0,0.5,0.2);
+    points_this[3] = Vector3f(2.0,0.5,0.1);
     points_this[4] = Vector3f(2.0,0.5,0.0);
     points_this[5] = Vector3f(2.0,0.5,-0.2);
     points_this[6] = Vector3f(2.0,0.65,0.2);
@@ -163,43 +180,45 @@ class CSkeletonProcessor
     points_this[10] = Vector3f(2.0,0.35,-0.1);
     points_this[11] = Vector3f(2.0,0.35,-0.3);
 
-
-    points_other[0] = Vector3f(2.0,-0.25,0.5);
-    points_other[1] = Vector3f(2.0,-0.25,0.35);
-    points_other[2] = Vector3f(2.0,-0.25,0.2);
-    points_other[3] = Vector3f(2.0,-0.25,0.2);
-    points_other[4] = Vector3f(2.0,-0.25,0.0);
-    points_other[5] = Vector3f(2.0,-0.25,-0.2);
-    points_other[6] = Vector3f(2.0,-0.1,0.2);
-    points_other[7] = Vector3f(2.0,-0.1,-0.1);
-    points_other[8] = Vector3f(2.0,-0.1,-0.3);
-    points_other[9] = Vector3f(2.0,-0.4,0.2);
-    points_other[10] = Vector3f(2.0,-0.4,-0.1);
-    points_other[11] = Vector3f(2.0,-0.4,-0.3);
-
-    ROS_INFO("point_this: %.3f, %.3f, %.3f", points_this[0][0], points_this[0][1], points_this[0][2]);
-    ROS_INFO("point_other: %.3f, %.3f, %.3f", points_other[0][0], points_other[0][1], points_other[0][2]);
+    points_other[0] = Vector3f(2.0,1.25,0.5);
+    points_other[1] = Vector3f(2.0,1.25,0.35);
+    points_other[2] = Vector3f(2.0,1.25,0.2);
+    points_other[3] = Vector3f(2.0,1.25,0.1);
+    points_other[4] = Vector3f(2.0,1.25,0.0);
+    points_other[5] = Vector3f(2.0,1.25,-0.2);
+    points_other[6] = Vector3f(2.0,1.4,0.2);
+    points_other[7] = Vector3f(2.0,1.4,-0.1);
+    points_other[8] = Vector3f(2.0,1.4,-0.3);
+    points_other[9] = Vector3f(2.0,1.1,0.2);
+    points_other[10] = Vector3f(2.0,1.1,-0.1);
+    points_other[11] = Vector3f(2.0,1.1,-0.3);
+*/
+    // ROS_INFO("point_this: %.3f, %.3f, %.3f", points_this[0][0], points_this[0][1], points_this[0][2]);
+    // ROS_INFO("point_other: %.3f, %.3f, %.3f", points_other[0][0], points_other[0][1], points_other[0][2]);
     
-    //copiar_esqueleto(points_this, 0);
-    //copiar_esqueleto(points_other, idx);
+    // copiar_esqueleto(points_this, 0);
+    // copiar_esqueleto(points_other, idx);
+
+    copiar_esqueleto_top(points_this, 0);
+    copiar_esqueleto_top(points_other, idx);
 
     // paso 1: calcular centroides
     Vector3f ct_this, ct_others;
     calcular_centroide(ct_this, points_this);
     calcular_centroide(ct_others, points_other);
 
-    ROS_INFO("ct_this: %.3f, %.3f, %.3f", ct_this[0], ct_this[1], ct_this[2]);
-    ROS_INFO("ct_other: %.3f, %.3f, %.3f", ct_others[0], ct_others[1], ct_others[2]);
+    // ROS_INFO("ct_this: %.3f, %.3f, %.3f", ct_this[0], ct_this[1], ct_this[2]);
+    // ROS_INFO("ct_other: %.3f, %.3f, %.3f", ct_others[0], ct_others[1], ct_others[2]);
 
     // paso 2: restar el centroide a los puntos y calcular los componentes de S
-	  Matrix3f S;	// Zeroed by default
+	  Matrix3f S = Matrix3f::Zero();	// Zeroed by default
     for (size_t i = 0; i < points_other.size(); i++)
     {
       points_this[i] -= ct_this;
       points_other[i] -= ct_others;
 
-      ROS_INFO("point_this: %.3f, %.3f, %.3f", points_this[i][0], points_this[i][1], points_this[i][2]);
-      ROS_INFO("point_other: %.3f, %.3f, %.3f", points_other[i][0], points_other[i][1], points_other[i][2]);
+      // ROS_INFO("point_this: %.3f, %.3f, %.3f", points_this[i][0], points_this[i][1], points_this[i][2]);
+      // ROS_INFO("point_other: %.3f, %.3f, %.3f", points_other[i][0], points_other[i][1], points_other[i][2]);
 
       S(0, 0) += points_other[i][0] * points_this[i][0];
       S(0, 1) += points_other[i][0] * points_this[i][1];
@@ -213,6 +232,8 @@ class CSkeletonProcessor
       S(2, 1) += points_other[i][2] * points_this[i][1];
       S(2, 2) += points_other[i][2] * points_this[i][2];
     }
+
+    // ROS_INFO("matriz S:\n%.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n%.3f, %.3f, %.3f", S(0,0), S(0,1), S(0,2), S(1,0), S(1,1), S(1,2), S(2,0), S(2,1), S(2,2));
 
     // paso 3: construye la matriz N
     Matrix4f N;	// Zeroed by default
@@ -231,19 +252,29 @@ class CSkeletonProcessor
     N(2, 2) = -S(0, 0) + S(1, 1) - S(2, 2);
     N(2, 3) = S(1, 2) + S(2, 1);
 
-    N(3, 0) = N(0, 3) + S(2,2);
+    N(3, 0) = N(0, 3);
     N(3, 1) = N(1, 3);
     N(3, 2) = N(2, 3);
     N(3, 3) = -S(0, 0) - S(1, 1) + S(2, 2);
 
+    /*
+    ROS_INFO("matriz N:\n%.3f, %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f, %.3f", 
+      N(0,0), N(0,1), N(0,2), N(0,3),
+      N(1,0), N(1,1), N(1,2), N(1,3),
+      N(2,0), N(2,1), N(2,2), N(2,3),
+      N(3,0), N(3,1), N(3,2), N(3,3)
+    );
+    */
+    
     // paso 4: calcular los autovectores de la matriz N (q es el quaternion de rotacion y es igual al autovector correspondiente al mayor autovalor)
     // matrix (last column in Z)
-    Matrix4f Z;
+    // Matrix4f Z;
 
     // la matriz N es simetrica --> selfadjointeigensolver
     SelfAdjointEigenSolver<Matrix4f> es(N);
-    Vector4f v = es.eigenvectors().col(3); // get the largest 'eigenvector', it should normalized to one
-    
+    Vector4f v = es.eigenvectors().col(3); // get the largest 'eigenvector', it should be normalized to one
+    // ROS_INFO("vector v:\n%.3f, %.3f, %.3f, %.3f", v(0), v(1), v(2), v(3));
+
     // ASSERTDEB_(
     // 	fabs(
     // 		sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]) - 1.0) <
@@ -259,7 +290,12 @@ class CSkeletonProcessor
     }
 
     // paso 5: rotar el centroide de "others" con la rotacion en forma de matriz y restarlo del "ct_this"
-    Quaternionf q(v);
+    Quaternionf q;
+    q.x() = v[1];
+    q.y() = v[2];
+    q.z() = v[3];
+    q.w() = v[0];
+
     Matrix3f rotM = q.toRotationMatrix();
     Vector3f n_ct_others = rotM*ct_others;
     Vector3f t = ct_this - n_ct_others;
@@ -270,8 +306,15 @@ class CSkeletonProcessor
 
     // reset ready flag
     // skeleton_ready[0] = skeleton_ready[idx] = false;
-
-    ROS_INFO("\nRotacion: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\nTraslacion: %.3f, %.3f, %.3f",
+    if( rotM(0,0) != -1 )
+    {
+      myDoc << rotM(0,0) << "," << rotM(0,1) << "," << rotM(0,2) << "," 
+            << rotM(1,0) << "," << rotM(1,1) << "," << rotM(1,2) << "," 
+            << rotM(2,0) << "," << rotM(2,1) << "," << rotM(2,2) << "," 
+            << t(0) << "," << t(1) << "," << t(2) << std::endl;
+    }
+    
+    ROS_INFO("\nRotacion: %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n\nTraslacion: %.3f, %.3f, %.3f",
      rotM(0,0), rotM(0,1), rotM(0,2), rotM(1,0), rotM(1,1), rotM(1,2), rotM(2,0), rotM(2,1), rotM(2,2),
      t(0), t(1),t(2));
   
@@ -342,6 +385,12 @@ class CSkeletonProcessor
       skeleton_ready[i] = false;
       
       myDoc << esq_rgb_ref[i].posicion_cabeza[0] << "," << esq_rgb_ref[i].posicion_cabeza[1] << "," << esq_rgb_ref[i].posicion_cabeza[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_cuello[0] << "," << esq_rgb_ref[i].posicion_cuello[1] << "," << esq_rgb_ref[i].posicion_cuello[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_columna_arriba[0] << "," << esq_rgb_ref[i].posicion_columna_arriba[1] << "," << esq_rgb_ref[i].posicion_columna_arriba[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_hombro_izquierdo[0] << "," << esq_rgb_ref[i].posicion_hombro_izquierdo[1] << "," << esq_rgb_ref[i].posicion_hombro_izquierdo[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_codo_izquierdo[0] << "," << esq_rgb_ref[i].posicion_codo_izquierdo[1] << "," << esq_rgb_ref[i].posicion_codo_izquierdo[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_hombro_derecho[0] << "," << esq_rgb_ref[i].posicion_hombro_derecho[1] << "," << esq_rgb_ref[i].posicion_hombro_derecho[2] << ",";
+      myDoc << esq_rgb_ref[i].posicion_codo_derecho[0] << "," << esq_rgb_ref[i].posicion_codo_derecho[1] << "," << esq_rgb_ref[i].posicion_codo_derecho[2] << ",";
       // myDoc << esq_rgb[i].posicion_cabeza[0] << "," << esq_rgb[i].posicion_cabeza[1] << "," << esq_rgb[i].posicion_cabeza[2] << ",";
     }
 
@@ -359,7 +408,8 @@ class CSkeletonProcessor
     fused.posicion_mano_derecha = fused.posicion_mano_derecha/cont;
 
     // save results (DEBUG)
-    myDoc << fused.posicion_cabeza[0] << "," << fused.posicion_cabeza[1] << "," << fused.posicion_cabeza[2] << std::endl;
+    // myDoc << fused.posicion_cabeza[0] << "," << fused.posicion_cabeza[1] << "," << fused.posicion_cabeza[2] << std::endl;
+    myDoc << std::endl;
   }  
 
   // callbacks
@@ -442,11 +492,13 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "skeleton_processor"); //Inicializa el nodo
   ros::NodeHandle nh;
   CSkeletonProcessor sp = CSkeletonProcessor(&nh);
+  ros::Rate r(5);
 
   while(ros::ok()) {
     ros::spinOnce();
-    // sp.fuseSkeletons();
-    sp.extrinsicCalibrateRGBD(1);
+    sp.fuseSkeletons();
+    // sp.extrinsicCalibrateRGBD(1);
+    r.sleep();
   }
 
   return 0;

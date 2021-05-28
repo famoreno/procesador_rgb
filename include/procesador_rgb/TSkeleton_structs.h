@@ -34,6 +34,24 @@ struct TSkeleton
   TSkeleton() {
     rotacion = Matrix3f::Identity(); // eye
     traslacion = Vector3f::Zero(); // zero vector
+
+    status = 0;
+    timestamp = 0.0;
+
+    posicion_cabeza = Vector3f::Zero(); // zero vector
+    posicion_cuello = Vector3f::Zero(); // zero vector
+    posicion_hombro = Vector3f::Zero(); // zero vector
+    posicion_columna_arriba = Vector3f::Zero(); // zero vector
+    posicion_columna_medio = Vector3f::Zero(); // zero vector
+    posicion_columna_abajo = Vector3f::Zero(); // zero vector
+
+    posicion_hombro_izquierdo = Vector3f::Zero(); // zero vector
+    posicion_codo_izquierdo = Vector3f::Zero(); // zero vector
+    posicion_mano_izquierda = Vector3f::Zero(); // zero vector
+
+    posicion_hombro_derecho = Vector3f::Zero(); // zero vector
+    posicion_codo_derecho = Vector3f::Zero(); // zero vector
+    posicion_mano_derecha = Vector3f::Zero(); // zero vector
   }
 };
 
@@ -66,5 +84,33 @@ struct TSkeleton_fe
   Vector3f posicion_rodilla_derecha;
   Vector3f posicion_pie_derecha_talon;
   Vector3f posicion_pie_derecha_punta;
+
+  TSkeleton_fe() {
+    posicion_cabeza = Vector3f::Zero();
+    posicion_cuello = Vector3f::Zero();
+    posicion_cadera = Vector3f::Zero();
+
+    posicion_ojo_izquierdo = Vector3f::Zero();
+    posicion_oreja_izquierda = Vector3f::Zero();
+
+    posicion_ojo_derecho = Vector3f::Zero();
+    posicion_oreja_derecha = Vector3f::Zero();
+
+    posicion_hombro_izquierdo = Vector3f::Zero();
+    posicion_codo_izquierdo = Vector3f::Zero();
+    posicion_mano_izquierda = Vector3f::Zero();
+    posicion_cadera_izquierda = Vector3f::Zero();
+    posicion_rodilla_izquierda = Vector3f::Zero();
+    posicion_pie_izquierdo_talon = Vector3f::Zero();
+    posicion_pie_izquierdo_punta = Vector3f::Zero();
+
+    posicion_hombro_derecho = Vector3f::Zero();
+    posicion_codo_derecho = Vector3f::Zero();
+    posicion_mano_derecha = Vector3f::Zero();
+    posicion_cadera_derecha = Vector3f::Zero();
+    posicion_rodilla_derecha = Vector3f::Zero();
+    posicion_pie_derecha_talon = Vector3f::Zero();
+    posicion_pie_derecha_punta = Vector3f::Zero();
+  }
 
 };
