@@ -24,7 +24,7 @@
 using namespace std;
 using namespace Eigen;
 
-ofstream myDoc;
+ofstream myDoc, myDoc_fe;
 
 // main class
 class CSkeletonProcessor
@@ -143,7 +143,8 @@ class CSkeletonProcessor
     sub_skeleton3 = nh->subscribe<body_tracker_msgs::Skeleton>("body_tracker_sensor3/skeleton", 1000, boost::bind(&CSkeletonProcessor::chatterCallback_rgb,this,_1,3)); //Se suscribe al topic body_tracker/skeleton
     sub_openpose = nh->subscribe("frame", 1000, &CSkeletonProcessor::chatterCallback_fe, this); // Se suscribe al topic frame (esqueleto de la cámara ojo de pez)
 
-    myDoc.open("/home/mapir-admin/Desktop/resultados.txt", ios::out);
+    myDoc.open("/home/mapir-admin/Desktop/resultados_rgbd.txt", ios::out);
+    myDoc_fe.open("/home/mapir-admin/Desktop/resultados_fe.txt", ios::out);
      
     /*
     esq_rgb[1].traslacion[0] = 0.0;
@@ -154,6 +155,7 @@ class CSkeletonProcessor
 
   ~CSkeletonProcessor() {
     myDoc.close();
+    myDoc_fe.close();
   }
 
   void extrinsicCalibrateRGBD(const int idx)
@@ -314,9 +316,9 @@ class CSkeletonProcessor
             << t(0) << "," << t(1) << "," << t(2) << std::endl;
     }
     
-    ROS_INFO("\nRotacion: %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n\nTraslacion: %.3f, %.3f, %.3f",
-     rotM(0,0), rotM(0,1), rotM(0,2), rotM(1,0), rotM(1,1), rotM(1,2), rotM(2,0), rotM(2,1), rotM(2,2),
-     t(0), t(1),t(2));
+    // ROS_INFO("\nRotacion: %.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n%.3f, %.3f, %.3f\n\nTraslacion: %.3f, %.3f, %.3f",
+    //  rotM(0,0), rotM(0,1), rotM(0,2), rotM(1,0), rotM(1,1), rotM(1,2), rotM(2,0), rotM(2,1), rotM(2,2),
+    //  t(0), t(1),t(2));
   
  }  // extrinsicCalibration  
 
@@ -365,7 +367,7 @@ class CSkeletonProcessor
 
       // valid skeleton
       // ROS_INFO( "Skeleton [%d]: Ready: %s, Status: %d, Lapse: %.3f\n", i, skeleton_ready[i] ? "true" : "false", esq_rgb_ref[i].status, lapse );
-      ROS_INFO("[%d,%s] : posicion_cabeza: %.3f, %.3f, %.3f", i, skeleton_ready[i] ? "true" : "false", esq_rgb_ref[i].posicion_cabeza[0], esq_rgb_ref[i].posicion_cabeza[1], esq_rgb_ref[i].posicion_cabeza[2]);      
+      // ROS_INFO("[%d,%s] : posicion_cabeza: %.3f, %.3f, %.3f", i, skeleton_ready[i] ? "true" : "false", esq_rgb_ref[i].posicion_cabeza[0], esq_rgb_ref[i].posicion_cabeza[1], esq_rgb_ref[i].posicion_cabeza[2]);      
       fused.posicion_cabeza = fused.posicion_cabeza + esq_rgb_ref[i].posicion_cabeza; //*(esq_rgb_ref[i].status*0.5);
       fused.posicion_cuello = fused.posicion_cuello + esq_rgb_ref[i].posicion_cuello; //*(esq_rgb_ref[i].status*0.5);
       fused.posicion_hombro = fused.posicion_hombro + esq_rgb_ref[i].posicion_hombro; //*(esq_rgb_ref[i].status*0.5);
@@ -378,6 +380,16 @@ class CSkeletonProcessor
       fused.posicion_hombro_derecho = fused.posicion_hombro_derecho + esq_rgb_ref[i].posicion_hombro_derecho; //*(esq_rgb_ref[i].status*0.5);
       fused.posicion_codo_derecho = fused.posicion_codo_derecho + esq_rgb_ref[i].posicion_codo_derecho; //*(esq_rgb_ref[i].status*0.5);
       fused.posicion_mano_derecha = fused.posicion_mano_derecha + esq_rgb_ref[i].posicion_mano_derecha; //*(esq_rgb_ref[i].status*0.5);
+
+      /** /
+      ROS_INFO("posicion_cabeza: %.3f, %.3f, %.3f", fused.posicion_cabeza[0], fused.posicion_cabeza[1], fused.posicion_cabeza[2]);
+      ROS_INFO("posicion_cuello: %.3f, %.3f, %.3f", fused.posicion_cuello[0], fused.posicion_cuello[1], fused.posicion_cuello[2]);
+      ROS_INFO("posicion_columna_arriba: %.3f, %.3f, %.3f", fused.posicion_columna_arriba[0], fused.posicion_columna_arriba[1], fused.posicion_columna_arriba[2]);
+      ROS_INFO("posicion_hombro_izquierdo: %.3f, %.3f, %.3f", fused.posicion_hombro_izquierdo[0], fused.posicion_hombro_izquierdo[1], fused.posicion_hombro_izquierdo[2]);
+      ROS_INFO("posicion_codo_izquierdo: %.3f, %.3f, %.3f", fused.posicion_codo_izquierdo[0], fused.posicion_codo_izquierdo[1], fused.posicion_codo_izquierdo[2]);
+      ROS_INFO("posicion_hombro_derecho: %.3f, %.3f, %.3f", fused.posicion_hombro_derecho[0], fused.posicion_hombro_derecho[1], fused.posicion_hombro_derecho[2]);
+      ROS_INFO("posicion_codo_derecho: %.3f, %.3f, %.3f", fused.posicion_codo_derecho[0], fused.posicion_codo_derecho[1], fused.posicion_codo_derecho[2]);
+      /**/
       cont++;
 
       // ROS_INFO("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f", esq_rgb_ref[i].posicion_cabeza[0], esq_rgb_ref[i].posicion_cabeza[1], esq_rgb_ref[i].posicion_cabeza[2], fused.posicion_cuello[0], fused.posicion_cuello[1], fused.posicion_cuello[2]);
@@ -407,16 +419,34 @@ class CSkeletonProcessor
     fused.posicion_codo_derecho = fused.posicion_codo_derecho/cont;
     fused.posicion_mano_derecha = fused.posicion_mano_derecha/cont;
 
-    // save results (DEBUG)
-    // myDoc << fused.posicion_cabeza[0] << "," << fused.posicion_cabeza[1] << "," << fused.posicion_cabeza[2] << std::endl;
+    // save results (RGB)
+    myDoc << fused.posicion_cabeza[0] << "," << fused.posicion_cabeza[1] << "," << fused.posicion_cabeza[2] << ",";
+    myDoc << fused.posicion_cuello[0] << "," << fused.posicion_cuello[1] << "," << fused.posicion_cuello[2] << ",";
+    myDoc << fused.posicion_columna_arriba[0] << "," << fused.posicion_columna_arriba[1] << "," << fused.posicion_columna_arriba[2] << ",";
+    myDoc << fused.posicion_hombro_izquierdo[0] << "," << fused.posicion_hombro_izquierdo[1] << "," << fused.posicion_hombro_izquierdo[2] << ",";
+    myDoc << fused.posicion_codo_izquierdo[0] << "," << fused.posicion_codo_izquierdo[1] << "," << fused.posicion_codo_izquierdo[2] << ",";
+    myDoc << fused.posicion_hombro_derecho[0] << "," << fused.posicion_hombro_derecho[1] << "," << fused.posicion_hombro_derecho[2] << ",";
+    myDoc << fused.posicion_codo_derecho[0] << "," << fused.posicion_codo_derecho[1] << "," << fused.posicion_codo_derecho[2];
     myDoc << std::endl;
+
+    // save results (Fish-Eye)
+    myDoc_fe << esq_fe.posicion_cabeza[0] << "," << esq_fe.posicion_cabeza[1] << "," << esq_fe.posicion_cabeza[2] << ",";
+    myDoc_fe << esq_fe.posicion_cuello[0] << "," << esq_fe.posicion_cuello[1] << "," << esq_fe.posicion_cuello[2] << ",";
+    myDoc_fe << esq_fe.posicion_hombro_izquierdo[0] << "," << esq_fe.posicion_hombro_izquierdo[1] << "," << esq_fe.posicion_hombro_izquierdo[2] << ",";
+    myDoc_fe << esq_fe.posicion_codo_izquierdo[0] << "," << esq_fe.posicion_codo_izquierdo[1] << "," << esq_fe.posicion_codo_izquierdo[2] << ",";
+    myDoc_fe << esq_fe.posicion_mano_izquierda[0] << "," << esq_fe.posicion_mano_izquierda[1] << "," << esq_fe.posicion_mano_izquierda[2] << ",";
+    myDoc_fe << esq_fe.posicion_hombro_derecho[0] << "," << esq_fe.posicion_hombro_derecho[1] << "," << esq_fe.posicion_hombro_derecho[2] << ",";
+    myDoc_fe << esq_fe.posicion_codo_derecho[0] << "," << esq_fe.posicion_codo_derecho[1] << "," << esq_fe.posicion_codo_derecho[2] << ",";
+    myDoc_fe << esq_fe.posicion_mano_derecha[0] << "," << esq_fe.posicion_mano_derecha[1] << "," << esq_fe.posicion_mano_derecha[2];
+    myDoc_fe << std::endl;
+
   }  
 
   // callbacks
   // this callback accepts the index of the camera to process
   void chatterCallback_rgb(const body_tracker_msgs::Skeleton::ConstPtr&  data, const int idx)
   {
-    ROS_INFO("[%d,%s] : join_position_head: %.3f, %.3f, %.3f", idx, skeleton_ready[idx] ? "true" : "false", data->joint_position_head.x, data->joint_position_head.y, data->joint_position_head.z);
+    // ROS_INFO("[%d,%s] : join_position_head: %.3f, %.3f, %.3f", idx, skeleton_ready[idx] ? "true" : "false", data->joint_position_head.x, data->joint_position_head.y, data->joint_position_head.z);
     if( true /*skeleton_ready[idx] == false*/ )
     {
       // DEBUG
@@ -453,7 +483,7 @@ class CSkeletonProcessor
 
   void chatterCallback_fe(const ros_openpose::Frame::ConstPtr&  data_fe)
   {
-    // // DEBUG
+    // DEBUG
     // ROS_INFO("position nose x is: %f", data_fe->persons[0].bodyParts[0].pixel.x);
     // ROS_INFO("position nose y is: %f", data_fe->persons[0].bodyParts[0].pixel.y);
 
